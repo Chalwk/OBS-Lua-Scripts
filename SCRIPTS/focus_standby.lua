@@ -2,7 +2,6 @@
 -- MIT License
 
 local obs = obslua
-
 local ffi = require("ffi")
 
 ffi.cdef [[
@@ -86,12 +85,38 @@ end
 
 function script_description()
     return [[
-Shows the Standby image whenever Halo CE (haloce.exe)
-is not the active foreground window.
+Shows the Standby image whenever a specified game executable (e.g. haloce.exe)
+is NOT the active foreground window.
+
+You can edit all settings (scene name, standby source, target exe) below.
 ]]
 end
 
-function script_load()
+function script_properties()
+    local props = obs.obs_properties_create()
+
+    obs.obs_properties_add_text(props, "scene_name", "Scene Name", obs.OBS_TEXT_DEFAULT)
+    obs.obs_properties_add_text(props, "standby_source", "Standby Source Name", obs.OBS_TEXT_DEFAULT)
+    obs.obs_properties_add_text(props, "target_exe", "Target Executable", obs.OBS_TEXT_DEFAULT)
+
+    return props
+end
+
+function script_defaults(settings)
+    obs.obs_data_set_default_string(settings, "scene_name", "GAMING")
+    obs.obs_data_set_default_string(settings, "standby_source", "Standby")
+    obs.obs_data_set_default_string(settings, "target_exe", "haloce.exe")
+end
+
+function script_update(settings)
+    SCENE_NAME = obs.obs_data_get_string(settings, "scene_name")
+    STANDBY_SOURCE = obs.obs_data_get_string(settings, "standby_source")
+    TARGET_EXE = obs.obs_data_get_string(settings, "target_exe"):lower()
+    last_visible = nil
+end
+
+function script_load(settings)
+    script_update(settings)
     obs.timer_add(check_focus, 250)
     check_focus()
 end
