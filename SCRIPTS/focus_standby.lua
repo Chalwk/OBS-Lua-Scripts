@@ -2,6 +2,7 @@
 -- MIT License
 
 local obs = obslua
+---@diagnostic disable-next-line: unresolved-require
 local ffi = require("ffi")
 
 ffi.cdef [[

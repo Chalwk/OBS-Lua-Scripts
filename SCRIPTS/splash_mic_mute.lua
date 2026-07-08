@@ -4,8 +4,8 @@
 local obs = obslua
 
 local SCENE_NAME = "GAMING"
-local MIC_SOURCE_NAME = "MIC/AUX"   -- set to "" to disable mic muting
-local DESKTOP_SOURCE_NAME = "" -- set to "" to disable desktop muting
+local MIC_SOURCE_NAME = "MIC/AUX" -- set to "" to disable mic muting
+local DESKTOP_SOURCE_NAME = ""    -- set to "" to disable desktop muting
 
 local SPLASH_SOURCES = { "Starting Soon", "Be Right Back", "Stream Ended" }
 
@@ -31,6 +31,7 @@ local function update_mic_mute()
 
     local should_mute = any_splash_visible
 
+    ---@diagnostic disable-next-line: unnecessary-if
     if MIC_SOURCE_NAME ~= "" then
         local mic_source = obs.obs_get_source_by_name(MIC_SOURCE_NAME)
         if mic_source then
@@ -44,6 +45,7 @@ local function update_mic_mute()
         last_mic_muted = nil
     end
 
+    ---@diagnostic disable-next-line: unnecessary-if
     if DESKTOP_SOURCE_NAME ~= "" then
         local desktop_source = obs.obs_get_source_by_name(DESKTOP_SOURCE_NAME)
         if desktop_source then
