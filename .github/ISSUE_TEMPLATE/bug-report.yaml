@@ -1,0 +1,95 @@
+name: Bug Report
+description: Report a bug or unexpected behaviour in one of the OBS Lua scripts.
+title: "[BUG] <title>"
+labels: [ "bug", "needs triage" ]
+assignees: Chalwk
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Is this a security issue?**
+        > If this bug could expose stream keys, leak credentials, or let an
+        > attacker do something they shouldn't, **do not open a public issue**.
+        > Use the [Report a vulnerability](https://github.com/Chalwk/OBS-Lua-Scripts/security/advisories/new)
+        > link on the new issue page instead.
+        >
+        > For all other bugs, continue below.
+  - type: markdown
+    attributes:
+      value: |
+        **Describe the bug**
+        > Provide a clear and concise description in the following sections.
+        > Use headers (`#`) or lists (`-`) to organize your thoughts.
+  - type: input
+    id: script
+    attributes:
+      label: Which Script?
+      description: Provide the filename of the script that is misbehaving.
+      placeholder: "e.g., focus_standby.lua"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: List the exact steps that trigger the problem.
+      placeholder: |
+        1. Add the script to OBS
+        2. Configure the property ...
+        3. ...
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: Describe what you expected to happen.
+      placeholder: "Explain the expected behavior"
+    validations:
+      required: true
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: Describe what actually happened, including any error output from the OBS script log.
+      placeholder: "Paste the full error output here"
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: obs-version
+    attributes:
+      label: OBS Studio Version
+      description: Which version of OBS Studio are you running?
+      placeholder: "e.g., 30.1.2"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: Which OS are you running?
+      placeholder: "e.g., Windows 11, Ubuntu 24.04, macOS 15"
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Write any other context or information about the bug here.
+      placeholder: "Further context or information here"
+    validations:
+      required: false
+  - type: markdown
+    attributes:
+      value: |
+        **Screenshots and Logs**
+        > Include any relevant screenshots or log files to help illustrate the bug.
+        >
+        > Please make sure you have redacted any API keys, tokens, or personal data before posting.
+        >
+        >
+        > Thank you
+        >
+        > **I appreciate your effort in reporting bugs in OBS-Lua-Scripts. Your input is invaluable!**
