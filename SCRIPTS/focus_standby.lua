@@ -18,18 +18,27 @@ BOOL QueryFullProcessImageNameA(HANDLE hProcess, DWORD dwFlags, char *lpExeName,
 BOOL CloseHandle(HANDLE hObject);
 ]]
 
-local user32 = ffi.load("user32")
-local kernel32 = ffi.load("kernel32")
+-- Attempt to load Win32 libraries. On non-Windows systems this will fail and
+-- the script becomes a no-op instead of throwing errors into the OBS log.
+local user32, kernel32
+local win32_available = pcall(function ()
+    user32 = ffi.load("user32")
+    kernel32 = ffi.load("kernel32")
+end)
 
 local PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+local POLL_INTERVAL_MS = 250
 
-local SCENE_NAME = "GAMING"
-local STANDBY_SOURCE = "Standby"
-local TARGET_EXE = "haloce.exe"
+-- Configured via script properties (Tools -> Scripts)
+local scene_name = ""
+local standby_source_name = ""
+local target_exe = ""
 
-local last_visible = nil
+local last_standby_visible = nil
 
 local function get_foreground_exe()
+    if not win32_available then return nil end
+
     local hwnd = user32.GetForegroundWindow()
     if hwnd == nil then return nil end
 
@@ -41,84 +50,85 @@ local function get_foreground_exe()
 
     local buffer = ffi.new("char[1024]")
     local size = ffi.new("DWORD[1]", 1024)
-
     local success = kernel32.QueryFullProcessImageNameA(process, 0, buffer, size)
-
     kernel32.CloseHandle(process)
 
     if success == 0 then return nil end
 
     local path = ffi.string(buffer, size[0])
     local exe = path:match("([^\\/]+)$")
-
     if exe then return exe:lower() end
-
     return nil
 end
 
 local function set_standby_visible(visible)
-    local scene_source = obs.obs_get_source_by_name(SCENE_NAME)
+    local scene_source = obs.obs_get_source_by_name(scene_name)
     if scene_source == nil then return end
 
     local scene = obs.obs_scene_from_source(scene_source)
-    local item = obs.obs_scene_find_source_recursive(scene, STANDBY_SOURCE)
-
-    if item ~= nil then
-        obs.obs_sceneitem_set_visible(item, visible)
+    if scene ~= nil then
+        local item = obs.obs_scene_find_source_recursive(scene, standby_source_name)
+        if item ~= nil then
+            obs.obs_sceneitem_set_visible(item, visible)
+        end
     end
 
     obs.obs_source_release(scene_source)
 end
 
 local function check_focus()
+    if not win32_available then return end
+    if scene_name == "" or standby_source_name == "" or target_exe == "" then return end
+
     local exe = get_foreground_exe()
-    local show_standby = true
+    local show_standby = (exe == nil) or (exe ~= target_exe)
 
-    if exe ~= nil and exe == TARGET_EXE then
-        show_standby = false
-    end
-
-    if show_standby ~= last_visible then
-        last_visible = show_standby
+    if show_standby ~= last_standby_visible then
+        last_standby_visible = show_standby
         set_standby_visible(show_standby)
     end
 end
 
 function script_description()
     return [[
-Shows the Standby image whenever a specified game executable (e.g. haloce.exe)
-is NOT the active foreground window.
+Shows a standby source whenever a specified game executable is NOT the
+foreground window.
 
-You can edit all settings (scene name, standby source, target exe) below.
+Useful for automatically switching away from a game view when you alt-tab
+to another application, and back again when you return.
+
+Windows only. Configure the scene, source, and executable below.
 ]]
 end
 
 function script_properties()
     local props = obs.obs_properties_create()
 
-    obs.obs_properties_add_text(props, "scene_name", "Scene Name", obs.OBS_TEXT_DEFAULT)
-    obs.obs_properties_add_text(props, "standby_source", "Standby Source Name", obs.OBS_TEXT_DEFAULT)
-    obs.obs_properties_add_text(props, "target_exe", "Target Executable", obs.OBS_TEXT_DEFAULT)
+    obs.obs_properties_add_text(
+        props, "scene_name", "Scene name (containing the standby source):", obs.OBS_TEXT_DEFAULT
+    )
+    obs.obs_properties_add_text(props, "standby_source", "Standby source name:", obs.OBS_TEXT_DEFAULT)
+    obs.obs_properties_add_text(props, "target_exe", "Target executable (e.g. game.exe):", obs.OBS_TEXT_DEFAULT)
 
     return props
 end
 
 function script_defaults(settings)
-    obs.obs_data_set_default_string(settings, "scene_name", "GAMING")
-    obs.obs_data_set_default_string(settings, "standby_source", "Standby")
-    obs.obs_data_set_default_string(settings, "target_exe", "haloce.exe")
+    obs.obs_data_set_default_string(settings, "scene_name", "")
+    obs.obs_data_set_default_string(settings, "standby_source", "")
+    obs.obs_data_set_default_string(settings, "target_exe", "")
 end
 
 function script_update(settings)
-    SCENE_NAME = obs.obs_data_get_string(settings, "scene_name")
-    STANDBY_SOURCE = obs.obs_data_get_string(settings, "standby_source")
-    TARGET_EXE = obs.obs_data_get_string(settings, "target_exe"):lower()
-    last_visible = nil
+    scene_name = obs.obs_data_get_string(settings, "scene_name")
+    standby_source_name = obs.obs_data_get_string(settings, "standby_source")
+    target_exe = obs.obs_data_get_string(settings, "target_exe"):lower()
+    last_standby_visible = nil
 end
 
 function script_load(settings)
     script_update(settings)
-    obs.timer_add(check_focus, 250)
+    obs.timer_add(check_focus, POLL_INTERVAL_MS)
     check_focus()
 end
 
